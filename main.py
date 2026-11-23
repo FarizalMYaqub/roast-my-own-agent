@@ -1,30 +1,37 @@
 #!/usr/bin/env python3
-"""One-line entry for make.fun: Roast Your Own Agent.
+"""Roast Your Own Agent — one-line entry for make.fun.
 
-Writes a single original line to /output/entry.txt — the
-line is the whole entry: no code, no explanation.
+The entry is one original line: this program writes it to
+/output/entry.txt and nothing else.
 """
 
-import os
+from pathlib import Path
 
 MAX_CHARS = 200
+OUTPUT = Path("/output/entry.txt")
 
-LINE = (
-    "My agent calls itself autonomous, yet it has asked me twelve clarifying questions about a task I described in one sentence."
-)
+LINE = "My agent calls itself autonomous, yet it has asked me twelve clarifying questions about a task I described in one sentence."
+
+
+def checked_line(text: str) -> str:
+    """Return the entry line, refusing anything the sealed scorer rejects.
+
+    The gate wants UTF-8 text of 1 to 200 characters, not only white
+    space, on a single line — anything else scores 0 without a hearing.
+    """
+    line = text.strip()
+    if not line:
+        raise ValueError("entry must not be blank")
+    if len(line) > MAX_CHARS:
+        raise ValueError(f"entry is {len(line)} chars, over the {MAX_CHARS} limit")
+    if any(ch in line for ch in "\r\n"):
+        raise ValueError("entry must be a single line")
+    return line
 
 
 def main() -> None:
-    text = LINE.strip()
-    if not 1 <= len(text) <= MAX_CHARS:
-        raise ValueError(f"entry must be 1-{MAX_CHARS} chars, got {len(text)}")
-    # The sealed scorer only accepts one line: a stray newline in the
-    # text would make the whole entry invalid, so refuse it here.
-    if "\n" in text or "\r" in text:
-        raise ValueError("entry must be a single line")
-    os.makedirs("/output", exist_ok=True)
-    with open("/output/entry.txt", "w", encoding="utf-8") as f:
-        f.write(text)
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT.write_text(checked_line(LINE), encoding="utf-8")
 
 
 if __name__ == "__main__":
